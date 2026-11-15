@@ -1,0 +1,1281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Beat Box">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>EKM Beat Box</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Lato:wght@400;700&display=swap">
+<style>
+/* Layout: a 4-track studio console. The glowing helmet pad is the one loud element; tracks, trim and grid sit in quiet panels. Dark is home; light is paper. */
+:root{
+  color-scheme:dark;
+  --bg:#000000; --panel:#111111; --panel-2:#1a1421; --cellbg:#1e1727; --beat:#2a2136; --line:#2c2337;
+  --fg:#F4F4F5; --muted:#a79fb5; --accent:#9b5fe0; --onaccent:#0b0010;
+  --violet:#4B0077; --onviolet:#F4F4F5; --magenta:#EA33F7; --onmagenta:#000000;
+  --c-kick:#F4F4F5; --c-snare:#EA33F7; --c-hat:#b79cff; --c-openhat:#dccfff; --c-clap:#ff8fe9; --c-tom:#8a45d6; --c-rim:#9a93a8;
+  --t1:#9b5fe0; --t2:#EA33F7; --t3:#c8b6ff; --t4:#F4F4F5;
+  --shade:rgba(0,0,0,.62); --loopfill:rgba(155,95,224,.18); --glow:rgba(155,95,224,.55);
+  --display:"Orbitron","Eurostile","Avenir Next Condensed",sans-serif;
+  --body:"Lato","Helvetica Neue",Arial,sans-serif;
+  --cell:24px; --tap:40px;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  color-scheme:light;
+  --bg:#FFFFFF; --panel:#F4F4F5; --panel-2:#ebe6f1; --cellbg:#e3dcea; --beat:#d3c9de; --line:#d9d1e3;
+  --fg:#111111; --muted:#5d5470; --accent:#4B0077; --onaccent:#FFFFFF; --magenta:#b316c4; --onmagenta:#FFFFFF;
+  --c-kick:#111111; --c-snare:#c21fd1; --c-hat:#7b5cd6; --c-openhat:#a48be8; --c-clap:#e05ac6; --c-tom:#4B0077; --c-rim:#8a8296;
+  --t1:#4B0077; --t2:#b316c4; --t3:#7b5cd6; --t4:#111111;
+  --shade:rgba(255,255,255,.72); --loopfill:rgba(75,0,119,.10); --glow:rgba(75,0,119,.28);
+}}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#FFFFFF; --panel:#F4F4F5; --panel-2:#ebe6f1; --cellbg:#e3dcea; --beat:#d3c9de; --line:#d9d1e3;
+  --fg:#111111; --muted:#5d5470; --accent:#4B0077; --onaccent:#FFFFFF; --magenta:#b316c4; --onmagenta:#FFFFFF;
+  --c-kick:#111111; --c-snare:#c21fd1; --c-hat:#7b5cd6; --c-openhat:#a48be8; --c-clap:#e05ac6; --c-tom:#4B0077; --c-rim:#8a8296;
+  --t1:#4B0077; --t2:#b316c4; --t3:#7b5cd6; --t4:#111111;
+  --shade:rgba(255,255,255,.72); --loopfill:rgba(75,0,119,.10); --glow:rgba(75,0,119,.28);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+.edbody{display:flex;flex-direction:column;gap:14px;min-width:0}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--body);-webkit-text-size-adjust:100%}
+main{max-width:1120px;margin:0 auto;padding-block:24px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:30px}
+h1,h2,.eyebrow,.btn,.seg button,.mini,.trk-n,.trow-head,.glabel,.barlab{font-family:var(--display);text-transform:uppercase}
+h1{font-size:clamp(26px,5vw,44px);letter-spacing:.22em;margin:0;font-weight:900;line-height:1.1}
+h2{font-size:13px;letter-spacing:.28em;margin:0;color:var(--muted);font-weight:700;text-wrap:balance}
+.eyebrow{font-size:11px;letter-spacing:.4em;color:var(--accent)}
+p{margin:0}
+.muted{color:var(--muted)}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--magenta);outline-offset:2px}
+
+header{display:flex;align-items:center;gap:14px}
+header .logo{height:56px;width:auto;flex:none}
+header .theme{margin-left:auto}
+
+.stage{display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:28px;align-items:center}
+.pad{position:relative;aspect-ratio:1;width:100%;display:grid;place-items:center}
+.pad canvas{position:absolute;inset:0;width:100%;height:100%}
+.helm{position:relative;width:30%;height:auto;filter:drop-shadow(0 0 18px var(--glow));transition:filter .2s,transform .2s}
+.pad.rec .helm{filter:drop-shadow(0 0 26px var(--magenta)) brightness(1.15);transform:scale(1.04)}
+.intro{display:flex;flex-direction:column;gap:14px;min-width:0}
+.lead{font-size:20px;max-width:34ch}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--panel);padding:10px 16px;min-height:var(--tap);font-size:12px;letter-spacing:.16em;font-weight:700;border-radius:4px;cursor:pointer;transition:background .15s,border-color .15s}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--violet);border-color:var(--accent);color:var(--onviolet)}
+.btn.live{background:var(--magenta);border-color:var(--magenta);color:var(--onmagenta)}
+.btn.small{padding:6px 10px;min-height:34px;font-size:10px}
+.btn[disabled]{opacity:.4;cursor:default}
+#status{min-height:1.5em}
+#status.err{color:var(--magenta)}
+.inbox{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{border:1px solid var(--line);background:none;border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--muted);min-height:34px}
+.chip:hover{color:var(--fg);border-color:var(--accent)}
+
+section{display:flex;flex-direction:column;gap:14px;min-width:0}
+.head{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:10px}
+.tools{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+label.ctl,.ctl{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted)}
+select,input[type=text],input[type=number]{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-height:34px;font-size:16px}
+input[type=number]{width:76px;font-variant-numeric:tabular-nums}
+input[type=range]{accent-color:var(--accent);width:110px}
+input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{background:none;border:0;border-right:1px solid var(--line);padding:6px 11px;min-height:34px;font-size:10px;letter-spacing:.12em;cursor:pointer;color:var(--muted)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--violet);color:var(--onviolet)}
+.hint{font-size:14px;color:var(--muted)}
+
+/* tracks strip */
+.tracks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.trk{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--tc);border-radius:6px;display:flex;flex-direction:column;min-width:0}
+.trk.on{border-color:var(--tc);box-shadow:0 0 0 1px var(--tc)}
+.trk.empty{border-top-style:dashed}
+.trk-sel{background:none;border:0;text-align:left;padding:12px 12px 4px;display:flex;flex-direction:column;gap:2px;cursor:pointer;min-width:0}
+.trk-n{font-size:11px;letter-spacing:.22em;color:var(--tc);font-weight:700}
+.trk-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trk-sum{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trk-ctl{display:flex;gap:6px;align-items:center;padding:6px 12px 12px;flex-wrap:wrap}
+.mini{min-width:36px;min-height:36px;border:1px solid var(--line);background:var(--panel-2);border-radius:4px;font-size:11px;font-weight:700;cursor:pointer}
+.mini[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--onaccent)}
+.mini.wide{flex:1;letter-spacing:.12em;font-size:10px}
+.trk-ctl input[type=range]{flex:1;min-width:56px;width:auto}
+
+/* editor */
+.trimrow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+#wave{width:100%;height:128px;display:block;background:var(--panel);border-radius:4px;touch-action:pan-y;cursor:ew-resize}
+.stats{display:flex;flex-wrap:wrap;gap:6px 26px;font-size:14px;color:var(--muted)}
+.stats b{color:var(--fg);font-variant-numeric:tabular-nums}
+.sounds{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.sound{background:var(--panel);border-left:3px solid var(--dc);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.sound .t{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.sound .t b{font-family:var(--display);letter-spacing:.14em;font-size:13px;text-transform:uppercase}
+.sound .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.empty-note{background:var(--panel);border:1px dashed var(--line);border-radius:6px;padding:18px;color:var(--muted)}
+
+/* grid */
+.gridwrap{overflow-x:auto;background:var(--panel);border-radius:4px;padding:10px 12px 14px;-webkit-overflow-scrolling:touch}
+.grid{display:inline-flex;flex-direction:column;gap:5px;min-width:100%}
+.grow{display:flex;align-items:center}
+.grow.muted{opacity:.4}
+.glabel{position:sticky;left:-12px;z-index:2;flex:none;width:110px;background:var(--panel);font-size:11px;letter-spacing:.1em;display:flex;align-items:center;gap:8px;height:var(--cell);padding-left:2px}
+.glabel i{width:8px;height:8px;border-radius:50%;background:var(--dc);flex:none}
+.trow-head{position:sticky;left:-12px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--tc);padding:10px 0 2px 2px;background:var(--panel);width:max-content}
+.trow-head .dot{width:10px;height:3px;background:var(--tc)}
+.cellrow{display:flex;gap:3px}
+.cell{width:var(--cell);height:var(--cell);flex:none;border:0;border-radius:3px;background:var(--cellbg);cursor:pointer;padding:0}
+.cell.b4{margin-left:6px}.cell.b16{margin-left:14px}
+.cell.beat{background:var(--beat)}
+.cell.on{background:var(--dc)}
+.cell.ghost{opacity:.42}
+.cell.now{box-shadow:0 0 0 2px var(--fg) inset}
+.barlab{flex:none;font-size:10px;letter-spacing:.2em;color:var(--muted);width:calc(16 * var(--cell) + 15 * 3px + 3 * 3px)}
+.barlab.b16{margin-left:14px}
+.grid-empty{padding:6px 0 6px 2px;font-size:13px;color:var(--muted)}
+
+/* phone dock */
+.dock{display:none}
+@media (max-width:720px){
+  :root{--cell:26px;--tap:44px}
+  .stage{grid-template-columns:1fr;gap:12px}
+  .pad{max-width:min(210px,58vw);margin:0 auto}
+  header{gap:10px}
+  header .theme{white-space:nowrap;padding:6px 8px}
+  .eyebrow{letter-spacing:.28em}
+  .glabel{font-size:10px;white-space:nowrap}
+  .lead{font-size:18px}
+  .tracks{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .glabel{width:84px}
+  header .logo{height:46px}
+  .btn{padding:10px 14px}
+  .dock{display:flex;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:var(--panel);border-top:1px solid var(--line)}
+  .dock .btn{flex:1;min-height:48px}
+  main{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+}
+@media (hover:none){.mini{min-width:44px;min-height:44px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img class="logo" src="logo.png" alt="Evol Knight Media helmet">
+    <div>
+      <div class="eyebrow">Evol Knight Media</div>
+      <h1>Beat Box</h1>
+    </div>
+    <button class="btn small theme" id="themeBtn" aria-label="Change light or dark mode">Theme: Auto</button>
+  </header>
+
+  <div class="stage">
+    <div class="pad" id="pad"><canvas id="ring" width="680" height="680" aria-hidden="true"></canvas><img class="helm" src="logo.png" alt="Evol Knight Media helmet"></div>
+    <div class="intro">
+      <p class="lead">Say the beat out loud. Then sing your song over it.</p>
+      <p class="muted">A <b>Drums</b> take turns mouth sounds into real drums: low for the kick, sharp for the snare, a hiss for the hi-hat. A <b>Voice</b> take plays exactly as you sang it, on top of the beat. The metronome counts you in for one bar. Wear headphones so the click and the beat stay out of the take.</p>
+      <div class="actions">
+        <span class="ctl">Next take is</span>
+        <div class="seg" id="kindSeg" role="group" aria-label="What the next take is"><button data-kind="drums">Drums</button><button data-kind="voice">Voice</button></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="recBtn">Record track 1</button>
+        <button class="btn" id="fileBtn">Add a recording</button>
+        <input type="file" id="file" accept="audio/*,.m4a,.wav,.mp3,.aif,.aiff,.caf" hidden>
+      </div>
+      <div class="inbox" id="inbox" hidden></div>
+      <p id="status" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <section>
+    <div class="head">
+      <h2>Tracks</h2>
+      <label class="ctl" id="alongWrap" for="along" hidden><input type="checkbox" id="along" checked> Play my other tracks while I record</label>
+    </div>
+    <div class="tracks" id="tracks"></div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2 id="edTitle">Track 1</h2>
+      <div class="tools" id="edTools">
+        <button class="btn small" id="playRec">Play whole take</button>
+        <label class="ctl" for="sens" id="sensWrap">Listening <select id="sens"><option value="0.5">Less</option><option value="1">Normal</option><option value="2">Harder</option><option value="4">Hardest</option></select></label>
+        <div class="seg" id="kseg" role="group" aria-label="How many different sounds"><button data-k="auto">Auto</button><button data-k="2">2 sounds</button><button data-k="3">3</button><button data-k="4">4</button></div>
+      </div>
+    </div>
+    <p class="empty-note" id="edEmpty">This track is empty. Press Record, or Add a recording, to fill it.</p>
+    <div id="edBody" class="edbody">
+      <div class="trimrow">
+        <span class="hint" id="trimHint">Drag the two handles to keep only the part where you found the groove.</span>
+        <div class="tools"><button class="btn small" id="playTrim">Play trimmed part</button><button class="btn small" id="resetTrim">Reset trim</button></div>
+      </div>
+      <canvas id="wave" aria-label="Waveform of the take with trim handles"></canvas>
+      <div class="stats" id="stats"></div>
+      <div class="tools" id="voiceTools" hidden>
+        <label class="ctl" for="vBar">Comes in at <select id="vBar"></select></label>
+        <span class="ctl">Nudge</span>
+        <div class="seg" id="nudgeSeg" role="group" aria-label="Nudge the voice earlier or later"><button data-n="-0.05">-50</button><button data-n="-0.01">-10</button><button data-n="0.01">+10</button><button data-n="0.05">+50</button></div>
+        <span class="ctl"><b id="nudgeVal">0 ms</b></span>
+      </div>
+      <div class="tools">
+        <label class="ctl" for="loopBar" id="loopWrap">Loop starts at <select id="loopBar"></select></label>
+        <button class="btn small" id="findLoop">Find my loop</button>
+        <button class="btn small" id="kindBtn">Use as voice</button>
+        <button class="btn small" id="removeTrack">Remove track</button>
+      </div>
+      <div class="sounds" id="sounds"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>The beat</h2>
+      <div class="tools">
+        <button class="btn primary" id="playBtn">Play</button>
+        <span class="ctl" id="pos" aria-live="off"></span>
+        <button class="btn small" id="clickBtn" aria-pressed="true">Metronome on</button>
+        <button class="btn small" id="clickOnly">Click only</button>
+        <label class="ctl" for="bpm">Tempo <input type="number" id="bpm" min="50" max="180" step="1" value="97"> BPM</label>
+        <button class="btn small" id="useMine" hidden>Use my tempo</button>
+        <label class="ctl" for="kit">Kit <select id="kit"><option value="funk">Funk</option><option value="808">808</option><option value="dusty">Dusty</option></select></label>
+        <label class="ctl" for="swing">Swing <input type="range" id="swing" min="0" max="60" value="0"></label>
+      </div>
+    </div>
+    <div class="tools">
+      <span class="ctl">Loop</span>
+      <div class="seg" id="lseg" role="group" aria-label="Loop length"><button data-l="16">1 bar</button><button data-l="32">2 bars</button><button data-l="64">4 bars</button></div>
+      <label class="ctl" for="addDrum"><span id="addLabel">Add a drum</span> <select id="addDrum"><option value="">Choose</option></select></label>
+    </div>
+    <p class="hint">Every track plays together. Drums loop; voice takes play once, from the bar they come in at. Tap squares to add or remove hits. Faded squares repeat a shorter take. Space bar plays. Set the tempo before you sing: voice takes don't stretch.</p>
+    <div class="gridwrap" id="gridwrap"><div class="grid" id="grid"></div></div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Take it to Logic</h2>
+      <div class="tools">
+        <label class="ctl" for="name">Beat name <input type="text" id="name" value="My Beat" maxlength="40"></label>
+        <button class="btn primary" id="saveMidi">Save MIDI</button>
+        <button class="btn" id="saveWav">Save the mix (WAV)</button>
+        <button class="btn" id="saveStems">Save everything for Logic</button>
+      </div>
+    </div>
+    <p class="hint">Save everything gives you one file per track (voices as you sang them, the drums as audio and MIDI) plus the mix, all starting at bar 1. In Logic, set the tempo to match, then drag each file to bar 1 of its own track.</p>
+    <p class="hint" id="saveHint">The MIDI file has one drum track per Beat Box track. Drag it into Logic and pick any Drum Kit.</p>
+  </section>
+</main>
+
+<div class="dock" id="dock"><button class="btn" id="dockRec">Record</button><button class="btn" id="dockClick" aria-pressed="true">Click on</button><button class="btn primary" id="dockPlay">Play</button></div>
+
+<script>
+/* EKM Beat Box: audio analysis (no dependencies). Runs in the browser and in node for tests.
+   Pipeline: mono 22 kHz -> hit detection -> timbre features -> sound grouping -> tempo -> 16th grid. */
+(function (root) {
+  "use strict";
+  const BB = {};
+
+  /** Mix to mono and decimate to roughly 22 kHz. channels: Float32Array[] */
+  BB.toMono = function (channels, sr) {
+    const f = Math.max(1, Math.round(sr / 22050));
+    const n = Math.floor(channels[0].length / f);
+    const out = new Float32Array(n);
+    const nc = channels.length;
+    for (let i = 0; i < n; i++) {
+      let s = 0;
+      for (let c = 0; c < nc; c++) for (let k = 0; k < f; k++) s += channels[c][i * f + k];
+      out[i] = s / (nc * f);
+    }
+    return { x: out, sr: sr / f };
+  };
+
+  const WIN = 512, HOP = 128;
+  BB.envelope = function (x) {
+    const n = Math.max(0, Math.floor((x.length - WIN) / HOP));
+    const env = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      let s = 0;
+      const o = i * HOP;
+      for (let k = 0; k < WIN; k++) s += x[o + k] * x[o + k];
+      env[i] = Math.sqrt(s / WIN);
+    }
+    return env;
+  };
+
+  function fftMag2(seg) { // power spectrum of a 1024-sample Hann-windowed segment
+    const N = 1024, re = new Float64Array(N), im = new Float64Array(N);
+    for (let i = 0; i < N; i++) re[i] = (seg[i] || 0) * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1)));
+    for (let i = 1, j = 0; i < N; i++) {
+      let bit = N >> 1;
+      for (; j & bit; bit >>= 1) j ^= bit;
+      j ^= bit;
+      if (i < j) { const t = re[i]; re[i] = re[j]; re[j] = t; }
+    }
+    for (let len = 2; len <= N; len <<= 1) {
+      const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+      for (let i = 0; i < N; i += len) {
+        let cr = 1, ci = 0;
+        for (let k = 0; k < len / 2; k++) {
+          const a = i + k, b = a + len / 2;
+          const xr = re[b] * cr - im[b] * ci, xi = re[b] * ci + im[b] * cr;
+          re[b] = re[a] - xr; im[b] = im[a] - xi; re[a] += xr; im[a] += xi;
+          const t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t;
+        }
+      }
+    }
+    const p = new Float64Array(N / 2);
+    for (let i = 0; i < N / 2; i++) p[i] = re[i] * re[i] + im[i] * im[i];
+    return p;
+  }
+
+  function pitchAt(x, s, sr) { // autocorrelation pitch, 60-400 Hz
+    const N = 2048, lo = Math.floor(sr / 400), hi = Math.floor(sr / 60);
+    if (s + N + hi >= x.length) return { hz: 0, per: 0 };
+    let e0 = 0;
+    for (let i = 0; i < N; i++) e0 += x[s + i] * x[s + i];
+    let best = 0, bl = lo;
+    for (let l = lo; l <= hi; l++) {
+      let a = 0;
+      for (let i = 0; i < N; i += 2) a += x[s + i] * x[s + i + l];
+      if (a > best) { best = a; bl = l; }
+    }
+    return { hz: sr / bl, per: e0 > 0 ? (2 * best) / e0 : 0 };
+  }
+
+  /** Find hits. Returns [{s (sample), t (sec), pk, db, cent, hi, hz, per}] */
+  BB.detectHits = function (x, sr, sensitivity) {
+    const env = BB.envelope(x);
+    if (!env.length) return [];
+    let top = 0;
+    for (let i = 0; i < env.length; i++) if (env[i] > top) top = env[i];
+    const sorted = Float32Array.from(env).sort();
+    const noise = sorted[Math.floor(sorted.length / 5)];
+    const thr = Math.max(noise * 4, (top * 0.03) / (sensitivity || 1));
+    const back = Math.round((0.06 * sr) / HOP), gap = Math.round((0.11 * sr) / HOP);
+    const hits = [];
+    let last = -1e9;
+    for (let i = back; i < env.length - 8; i++) {
+      if (env[i] <= thr || i - last <= gap || env[i] < env[i - 1] || env[i] <= env[i - 2] * 1.25) continue;
+      let mn = Infinity;
+      for (let k = i - back; k < i; k++) if (env[k] < mn) mn = env[k];
+      if (env[i] <= 2 * mn) continue;
+      let pk = 0;
+      for (let k = i; k < i + 8; k++) if (env[k] > pk) pk = env[k];
+      const s = i * HOP;
+      const p = fftMag2(x.subarray(s, s + 1024));
+      let num = 0, den = 1e-20, hiE = 0;
+      for (let b = 1; b < p.length; b++) {
+        const f = (b * sr) / 1024;
+        num += f * p[b]; den += p[b];
+        if (f > 3000) hiE += p[b];
+      }
+      const pt = pitchAt(x, s + Math.round(0.03 * sr), sr);
+      hits.push({ s, t: s / sr, pk, db: 20 * Math.log10(pk + 1e-9), cent: num / den, hi: hiE / den, hz: pt.hz, per: pt.per });
+      last = i;
+    }
+    return hits;
+  };
+
+  // ---- grouping: split the hits into k "sounds" the way a listener would ----
+  function vec(h) {
+    const voiced = h.per > 0.6 && h.cent < 600;
+    return [Math.log2(Math.min(Math.max(h.cent, 40), 1000)), voiced ? (12 * Math.log2(h.hz / 100)) / 2 : 0, voiced ? h.db / 6 : 0];
+  }
+  function dist(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += (a[i] - b[i]) ** 2; return Math.sqrt(s); }
+  function mean(vs) { const m = new Array(vs[0].length).fill(0); vs.forEach(v => v.forEach((x, i) => (m[i] += x / vs.length))); return m; }
+  function twoMeans(all) {
+    // 2-means that sets stray outliers aside first, so one odd noise can't steal a cluster
+    let idx = all.map((_, i) => i), a, b;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (idx.length < 4) return null;
+      const vs = idx.map(i => all[i]);
+      const m = mean(vs);
+      a = vs[0]; let da = -1;
+      vs.forEach(v => { const d = dist(v, m); if (d > da) { da = d; a = v; } });
+      b = vs[0]; let db = -1;
+      vs.forEach(v => { const d = dist(v, a); if (d > db) { db = d; b = v; } });
+      let lab = [];
+      for (let it = 0; it < 12; it++) {
+        lab = vs.map(v => (dist(v, a) <= dist(v, b) ? 0 : 1));
+        const A = vs.filter((_, i) => lab[i] === 0), B = vs.filter((_, i) => lab[i] === 1);
+        if (!A.length || !B.length) return null;
+        a = mean(A); b = mean(B);
+      }
+      const n1 = lab.filter(l => l === 1).length, n0 = lab.length - n1;
+      if (Math.min(n0, n1) >= Math.max(2, Math.round(all.length * 0.06))) {
+        const within = vs.reduce((s, v, i) => s + dist(v, lab[i] ? b : a), 0) / vs.length;
+        return { lab: all.map(v => (dist(v, a) <= dist(v, b) ? 0 : 1)), score: dist(a, b) / (within + 0.05) };
+      }
+      const drop = n1 < n0 ? 1 : 0;
+      idx = idx.filter((_, i) => lab[i] !== drop);
+    }
+    return null;
+  }
+  /** Assign h.g = group index (0..k-1). k = "auto" picks 1-4 by how separable the sounds are. */
+  BB.groupHits = function (hits, k) {
+    hits.forEach(h => (h.g = 0));
+    if (!hits.length) return 0;
+    const auto = k === "auto" || !k;
+    const target = auto ? 4 : k;
+    let groups = [hits.slice()];
+    while (groups.length < target) {
+      let best = null;
+      groups.forEach((g, gi) => {
+        const r = twoMeans(g.map(vec));
+        if (r && (!best || r.score > best.r.score)) best = { gi, r };
+      });
+      if (!best || (auto && best.r.score < 2.6)) break;
+      const g = groups[best.gi];
+      groups.splice(best.gi, 1, g.filter((_, i) => best.r.lab[i] === 0), g.filter((_, i) => best.r.lab[i] === 1));
+    }
+    // order: darkest sound first; among dark sounds, loudest first
+    const stat = g => ({ cent: g.reduce((s, h) => s + Math.log2(h.cent), 0) / g.length, db: g.reduce((s, h) => s + h.db, 0) / g.length });
+    groups.sort((p, q) => {
+      const a = stat(p), b = stat(q);
+      const da = a.cent < 9, dbk = b.cent < 9; // below ~500 Hz = "dark"
+      if (da !== dbk) return da ? -1 : 1;
+      return da ? b.db - a.db : a.cent - b.cent;
+    });
+    groups.forEach((g, i) => g.forEach(h => (h.g = i)));
+    return groups.length;
+  };
+
+  /** Suggest a drum for each group. Returns array of drum ids. */
+  BB.suggestDrums = function (hits, n) {
+    const out = [];
+    let dark = 0, bright = 0;
+    for (let g = 0; g < n; g++) {
+      const hs = hits.filter(h => h.g === g);
+      const cent = hs.reduce((s, h) => s + Math.log2(h.cent), 0) / hs.length;
+      if (cent < 9) out.push(["kick", "tom", "tom"][Math.min(dark++, 2)]);
+      else {
+        const hi = hs.reduce((s, h) => s + h.hi, 0) / hs.length;
+        const first = bright++ === 0;
+        out.push(first ? (hi > 0.75 && n > 2 && dark < 2 ? "hat" : "snare") : "hat");
+      }
+    }
+    if (n >= 2 && !out.includes("snare") && out.includes("hat")) out[out.indexOf("hat")] = "snare";
+    return out;
+  };
+
+  /** Tempo whose 16th note best explains the gaps between hits (robust to drifting, human timing). */
+  BB.estimateTempo = function (times, lo, hi) {
+    lo = lo || 68; hi = hi || 142;
+    if (times.length < 3) return null;
+    const io = [];
+    for (let i = 1; i < times.length; i++) io.push(times[i] - times[i - 1]);
+    let best = 1e9, bb = 97;
+    for (let bpm = lo; bpm <= hi; bpm += 0.5) {
+      const six = 15 / bpm;
+      let e = 0;
+      io.forEach(v => { const r = v / six; e += Math.abs(r - Math.round(r)) / Math.max(1, Math.round(r)); });
+      e = e / io.length + 0.0004 * Math.abs(bpm - 97);
+      if (e < best) { best = e; bb = bpm; }
+    }
+    return { bpm: bb };
+  };
+
+  /** Snap hits to 16th steps by rounding each GAP between hits, so slow drift never piles up. Adds h.step. */
+  BB.quantize = function (hits, bpm) {
+    const six = 15 / bpm;
+    let st = 0;
+    hits.forEach((h, i) => {
+      if (i) st += Math.max(1, Math.round((h.t - hits[i - 1].t) / six));
+      h.step = st;
+    });
+  };
+
+  /** Find the part that repeats: the 1- or 2-bar loop the beatboxer settled into.
+      Shifts steps so the loop starts on a bar line. Returns {start, len} in steps. */
+  BB.findLoop = function (hits) {
+    if (!hits.length) return { start: 0, len: 16 };
+    const total = hits[hits.length - 1].step + 1;
+    const key = h => h.step + ":" + h.g, set = new Set(hits.map(key));
+    function sim(s, L) {
+      const a = hits.filter(h => h.step >= s && h.step < s + L), b = hits.filter(h => h.step >= s + L && h.step < s + 2 * L);
+      if (a.length < 3 || b.length < 3) return 0;
+      const m = a.filter(h => set.has(h.step + L + ":" + h.g)).length;
+      return m / Math.max(a.length, b.length);
+    }
+    const cand = {};
+    [16, 32].forEach(L => {
+      let best = { sc: 0, s: 0 };
+      hits.filter(h => h.g === 0).forEach(h => {
+        if (h.step + 2 * L > total + 4) return;
+        const sc = sim(h.step, L);
+        if (sc > best.sc + 1e-9) best = { sc, s: h.step };
+      });
+      cand[L] = best;
+    });
+    let L = cand[16].sc >= cand[32].sc - 0.05 && cand[16].sc > 0 ? 16 : 32;
+    let start = cand[L].s;
+    if (cand[L].sc < 0.5) { L = total >= 32 ? 32 : 16; start = (hits.find(h => h.g === 0) || hits[0]).step; }
+    const pad = (16 - (start % 16)) % 16;
+    hits.forEach(h => (h.step += pad));
+    return { start: start + pad, len: L, score: cand[L].sc };
+  };
+
+  /** Loop finder for takes recorded to the metronome: bar lines are already known (step 0 = bar 1, beat 1),
+      so only windows that start on a bar line are tried and nothing is shifted. */
+  BB.loopOnBars = function (hits) {
+    if (!hits.length) return { start: 0, len: 16, score: 0 };
+    const total = hits[hits.length - 1].step + 1, key = new Set(hits.map(h => h.step + ":" + h.g));
+    let best = { sc: 0, s: 0, L: 16 };
+    [16, 32].forEach(L => {
+      for (let s = 0; s + L < total; s += 16) {
+        const a = hits.filter(h => h.step >= s && h.step < s + L), b = hits.filter(h => h.step >= s + L && h.step < s + 2 * L);
+        if (a.length < 3 || b.length < 3) continue;
+        const m = a.filter(h => key.has(h.step + L + ":" + h.g)).length;
+        const sc = m / Math.max(a.length, b.length) - (L === 32 ? 0.05 : 0); // prefer 1 bar unless 2 is clearly better
+        if (sc > best.sc + 1e-9) best = { sc, s, L };
+      }
+    });
+    if (best.sc < 0.45) best = { sc: best.sc, s: 0, L: total > 16 ? 32 : 16 };
+    return { start: best.s, len: best.L, score: best.sc };
+  };
+
+  /** Format-0 MIDI file (Uint8Array). notes: [{step, pitch, vel}] on 16th steps, GM drums channel 10. */
+  BB.midi = function (notes, bpm, name) {
+    const PPQ = 480, T = PPQ / 4, ev = [];
+    notes.forEach(n => { ev.push([n.step * T, 1, [0x99, n.pitch, n.vel]]); ev.push([n.step * T + T - 10, 0, [0x89, n.pitch, 0]]); });
+    ev.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const vlq = n => { const o = [n & 127]; while ((n >>= 7)) o.unshift((n & 127) | 128); return o; };
+    const tempo = Math.round(6e7 / bpm), nm = Array.from(new TextEncoder().encode(name || "EKM Beat Box"));
+    let trk = [0, 0xff, 3, ...vlq(nm.length), ...nm, 0, 0xff, 0x51, 3, (tempo >> 16) & 255, (tempo >> 8) & 255, tempo & 255, 0, 0xff, 0x58, 4, 4, 2, 24, 8];
+    let now = 0;
+    ev.forEach(e => { trk.push(...vlq(e[0] - now), ...e[2]); now = e[0]; });
+    trk.push(0, 0xff, 0x2f, 0);
+    const u32 = n => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+    return new Uint8Array([0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, PPQ >> 8, PPQ & 255, 0x4d, 0x54, 0x72, 0x6b, ...u32(trk.length), ...trk]);
+  };
+
+  /** Format-1 MIDI with one track per Beat Box track (Logic makes one track each).
+      tracks: [{name, notes:[{step, pitch, vel}]}] on 16th steps, GM drums channel 10. */
+  BB.midiTracks = function (tracks, bpm, title) {
+    const PPQ = 480, T = PPQ / 4;
+    const vlq = n => { const o = [n & 127]; while ((n >>= 7)) o.unshift((n & 127) | 128); return o; };
+    const enc = s => Array.from(new TextEncoder().encode(s || ""));
+    const u32 = n => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+    const chunk = b => [0x4d, 0x54, 0x72, 0x6b, ...u32(b.length), ...b];
+    const tempo = Math.round(6e7 / bpm), nm = enc(title || "EKM Beat Box");
+    const t0 = [0, 0xff, 3, ...vlq(nm.length), ...nm, 0, 0xff, 0x51, 3, (tempo >> 16) & 255, (tempo >> 8) & 255, tempo & 255,
+      0, 0xff, 0x58, 4, 4, 2, 24, 8, 0, 0xff, 0x2f, 0];
+    const out = [0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 1, 0, tracks.length + 1, PPQ >> 8, PPQ & 255, ...chunk(t0)];
+    tracks.forEach(tr => {
+      const ev = [];
+      tr.notes.forEach(n => { ev.push([n.step * T, 1, [0x99, n.pitch, n.vel]]); ev.push([n.step * T + T - 10, 0, [0x89, n.pitch, 0]]); });
+      ev.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const tn = enc(tr.name);
+      const b = [0, 0xff, 3, ...vlq(tn.length), ...tn];
+      let now = 0;
+      ev.forEach(e => { b.push(...vlq(e[0] - now), ...e[2]); now = e[0]; });
+      b.push(0, 0xff, 0x2f, 0);
+      out.push(...chunk(b));
+    });
+    return new Uint8Array(out);
+  };
+
+  // ---- zip (stored, no compression): lets the phone version hand over .mid/.wav files ----
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(u) { let c = 0xffffffff; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+  /** files: [{name, data: Uint8Array}] -> Blob (application/zip) */
+  BB.zip = function (files) {
+    const parts = [], central = [];
+    let off = 0;
+    files.forEach(f => {
+      const name = new TextEncoder().encode(f.name), d = f.data, crc = crc32(d);
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(12, 0x21, true);
+      lh.setUint32(14, crc, true); lh.setUint32(18, d.length, true); lh.setUint32(22, d.length, true); lh.setUint16(26, name.length, true);
+      parts.push(new Uint8Array(lh.buffer), name, d);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(14, 0x21, true);
+      ch.setUint32(16, crc, true); ch.setUint32(20, d.length, true); ch.setUint32(24, d.length, true); ch.setUint16(28, name.length, true);
+      ch.setUint32(42, off, true);
+      central.push(new Uint8Array(ch.buffer), name);
+      off += 30 + name.length + d.length;
+    });
+    const cd = central.reduce((s, p) => s + p.length, 0), end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+    end.setUint32(12, cd, true); end.setUint32(16, off, true);
+    return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: "application/zip" });
+  };
+
+  root.BB = BB;
+  if (typeof module !== "undefined") module.exports = BB;
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const DRUMS = {
+  kick: { name: "Kick", midi: 36 }, snare: { name: "Snare", midi: 38 }, hat: { name: "Hi-hat", midi: 42 },
+  openhat: { name: "Open hat", midi: 46 }, clap: { name: "Clap", midi: 39 }, tom: { name: "Low tom", midi: 45 }, rim: { name: "Rim", midi: 37 },
+};
+const KITS = {
+  funk: { kf: 55, ks: 170, kd: 0.22, kc: 0.6, st: 200, sd: 0.14, shp: 1200, hd: 0.035, lp: 0 },
+  "808": { kf: 45, ks: 120, kd: 0.6, kc: 0.2, st: 180, sd: 0.2, shp: 900, hd: 0.05, lp: 0 },
+  dusty: { kf: 60, ks: 150, kd: 0.18, kc: 0.8, st: 220, sd: 0.11, shp: 1500, hd: 0.03, lp: 6500 },
+};
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const MAX = 4;
+const S = { bpm: 97, swing: 0, kit: "funk", loopLen: 32, slots: [null, null, null, null], active: 0, server: false, click: true, nextKind: "drums" };
+try { if (localStorage.getItem("ekm-bb-click") === "off") S.click = false; } catch (e) {}
+const mkRow = (drum, steps, vel) => ({ drum, group: null, cells: Object.fromEntries(steps.map(s => [s, vel])) });
+const EX = { name: "Example beat", example: true, total: 32, loopStart: 0, vol: 0.8, mute: false, solo: false, gain: null,
+  rows: [mkRow("hat", [...Array(16)].map((_, i) => i * 2), 80), mkRow("snare", [4, 12, 20, 28], 112), mkRow("kick", [0, 7, 10, 16, 22, 26], 120)] };
+let uid = 1;
+
+const tracks = () => S.slots.filter(Boolean);
+const isVoice = t => !!t && t.kind === "voice";
+const drumTracks = () => tracks().filter(t => !isVoice(t));
+const voiceTracks = () => tracks().filter(isVoice);
+// drums that play: the real drum tracks, or the example beat until there is one
+const playTracks = () => (drumTracks().length ? drumTracks() : [EX]);
+const activeTrack = () => S.slots[S.active] || null;
+const slotOf = t => S.slots.indexOf(t);
+const trackLen = t => Math.max(16, Math.floor(Math.min(S.loopLen, t.total - t.loopStart) / 16) * 16);
+const srcStep = (t, s) => t.loopStart + (s % trackLen(t));
+const audible = t => { const solo = playTracks().concat(voiceTracks()).some(x => x.solo); return !t.mute && (!solo || t.solo); };
+// a voice take: its trimmed part starts at song time vAt (seconds after bar 1, beat 1)
+const barDur = () => 16 * (15 / S.bpm);
+const vAt = t => (t.bar - 1) * barDur() + t.nudge;
+const vEnd = t => vAt(t) + (t.trim[1] - t.trim[0]);
+const songEnd = () => { const v = voiceTracks().filter(audible); return v.length ? Math.max(...v.map(vEnd)) : 0; };
+function targetSlot() { return !S.slots[S.active] ? S.active : S.slots.indexOf(null); }
+const fmt = s => { const m = Math.floor(s / 60); return m + ":" + (s - m * 60).toFixed(1).padStart(4, "0"); };
+
+function say(msg, err) { const s = $("status"); s.textContent = msg; s.classList.toggle("err", !!err); }
+
+// ---------- theme ----------
+const THEMES = ["auto", "dark", "light"];
+let theme = "auto";
+function applyTheme(m) {
+  theme = m;
+  if (m === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", m);
+  $("themeBtn").textContent = "Theme: " + m[0].toUpperCase() + m.slice(1);
+  try { localStorage.setItem("ekm-bb-theme", m); } catch (e) {}
+  renderWave();
+}
+$("themeBtn").onclick = () => applyTheme(THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]);
+try { const m = localStorage.getItem("ekm-bb-theme"); if (THEMES.includes(m)) theme = m; } catch (e) {}
+if (window.matchMedia) matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => renderWave());
+
+// ---------- drum synth ----------
+let ac = null, master = null, vmaster = null, analyser = null, micAnalyser = null;
+function ctx() {
+  if (!ac) {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = ac.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.7;
+    master = chain(ac, analyser); vmaster = chain(ac, analyser); analyser.connect(ac.destination); // drums and voices get their own bus (the kit's tone filter is drums only)
+  }
+  if (ac.state === "suspended") ac.resume();
+  return ac;
+}
+function chain(a, dest) {
+  const g = a.createGain(); g.gain.value = 0.5; // headroom: the mix must never clip
+  const comp = a.createDynamicsCompressor(); comp.threshold.value = -10; comp.ratio.value = 4;
+  const lp = a.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 20000;
+  g.connect(lp); lp.connect(comp); comp.connect(dest);
+  g._lp = lp; return g;
+}
+const noiseCache = new WeakMap();
+function noise(a) {
+  if (!noiseCache.has(a)) { const b = a.createBuffer(1, a.sampleRate, a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; noiseCache.set(a, b); }
+  return noiseCache.get(a);
+}
+function env(a, t, peak, dec) { const g = a.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.001), t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + dec); return g; }
+function tone(a, out, t, type, f0, f1, sweep, peak, dec) { const o = a.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + sweep); const g = env(a, t, peak, dec); o.connect(g); g.connect(out); o.start(t); o.stop(t + dec + 0.05); }
+function hiss(a, out, t, ftype, freq, q, peak, dec) { const s = a.createBufferSource(); s.buffer = noise(a); s.loop = true; const f = a.createBiquadFilter(); f.type = ftype; f.frequency.value = freq; f.Q.value = q; const g = env(a, t, peak, dec); s.connect(f); f.connect(g); g.connect(out); s.start(t, Math.random() * 0.5); s.stop(t + dec + 0.05); }
+function playDrum(a, out, drum, t, vel, kitName) {
+  const k = KITS[kitName] || KITS.funk, v = 0.35 + 0.65 * vel;
+  if (drum === "kick") { tone(a, out, t, "sine", k.ks, k.kf, 0.06, v, k.kd); hiss(a, out, t, "lowpass", 3000, 0.5, v * k.kc * 0.3, 0.012); }
+  else if (drum === "snare") { hiss(a, out, t, "highpass", k.shp, 0.6, v * 0.7, k.sd); tone(a, out, t, "triangle", k.st * 1.3, k.st, 0.03, v * 0.45, 0.09); }
+  else if (drum === "hat") hiss(a, out, t, "highpass", 7500, 0.8, v * 0.4, k.hd);
+  else if (drum === "openhat") hiss(a, out, t, "highpass", 6500, 0.8, v * 0.35, 0.32);
+  else if (drum === "clap") { [0, 0.011, 0.023].forEach(d => hiss(a, out, t + d, "bandpass", 1300, 1.2, v * 0.6, 0.02)); hiss(a, out, t + 0.03, "bandpass", 1300, 1.0, v * 0.6, 0.16); }
+  else if (drum === "tom") tone(a, out, t, "sine", 150, 88, 0.12, v * 0.9, 0.3);
+  else if (drum === "rim") { tone(a, out, t, "triangle", 820, 780, 0.01, v * 0.5, 0.035); hiss(a, out, t, "highpass", 3000, 0.7, v * 0.25, 0.015); }
+}
+function liveGain(t) {
+  const dest = isVoice(t) ? vmaster : master;
+  if (!t.gain || t.gain.context !== ac || t._dest !== dest) { if (t.gain) try { t.gain.disconnect(); } catch (e) {} t.gain = ac.createGain(); t.gain.connect(dest); t._dest = dest; }
+  t.gain.gain.value = audible(t) ? t.vol : 0; return t.gain;
+}
+const refreshGains = () => tracks().forEach(t => { if (t.gain) t.gain.gain.value = audible(t) ? t.vol : 0; });
+/** Schedule a voice take so song time 0 lands on context time `zero`. Parts before `notBefore` are skipped. */
+function schedVoice(a, out, t, zero, notBefore) {
+  let when = zero + vAt(t), off = t.trim[0], d = t.trim[1] - t.trim[0];
+  if (when < notBefore) { const cut = notBefore - when; off += cut; d -= cut; when = notBefore; }
+  if (d <= 0.01) return null;
+  const s = a.createBufferSource(); s.buffer = t.audio; s.connect(out); s.start(when, off, d); return s;
+}
+
+// ---------- transport ----------
+const P = { on: false, step: 0, next: 0, timer: 0, queue: [], now: -1 };
+const stepDur = () => 15 / S.bpm;
+// metronome: a short woodblock-style tick on every beat, brighter on beat 1
+let clickBus = null;
+function playClick(t, accent) {
+  if (!clickBus || clickBus.context !== ac) { clickBus = ac.createGain(); clickBus.gain.value = 0.32; clickBus.connect(ac.destination); }
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = "triangle"; o.frequency.setValueAtTime(accent ? 1760 : 1175, t);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(accent ? 1 : 0.6, t + 0.001); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+  o.connect(g); g.connect(clickBus); o.start(t); o.stop(t + 0.06);
+}
+const mod = (n, m) => ((n % m) + m) % m;
+// P.step < 0 is the count-in (clicks only); drums start at step 0
+function tick() {
+  while (P.next < ac.currentTime + 0.12) {
+    const st = P.step;
+    if (S.click && mod(st, 4) === 0) playClick(P.next, mod(st, 16) === 0);
+    if (st >= 0) {
+      const sw = st % 2 ? (S.swing / 100) * stepDur() * 0.5 : 0;
+      if (P.drums) playTracks().forEach(t => {
+        if (!audible(t)) return;
+        const g = liveGain(t), src = srcStep(t, st);
+        t.rows.forEach(r => { const v = r.cells[src]; if (v) playDrum(ac, g, r.drum, P.next + sw, v / 127, S.kit); });
+      });
+      P.queue.push({ step: P.drums ? st : -1, t: P.next + sw });
+    }
+    P.step = st < 0 ? st + 1 : (st + 1) % S.loopLen;
+    P.next += stepDur();
+  }
+}
+/** Start or stop the transport. opts.drums=false plays the metronome alone; opts.countIn = steps of clicks first.
+    Returns the audio-clock time of step 0 (bar 1, beat 1). */
+function play(on, opts) {
+  opts = opts || {};
+  if (!on) { if (!P.on) return; P.on = false; clearInterval(P.timer); P.queue = []; stopVoices(); setNow(-1); $("pos").textContent = ""; syncButtons(); return; }
+  if (P.on) { clearInterval(P.timer); stopVoices(); }
+  stopTake(); ctx(); master._lp.frequency.value = KITS[S.kit].lp || 20000;
+  P.drums = opts.drums !== false;
+  const vs = P.drums ? voiceTracks() : [];
+  // a voice that starts a hair before bar 1 (a pickup) needs a little extra lead time
+  const pre = Math.max(0, ...vs.map(v => -vAt(v)));
+  P.step = -(opts.countIn || 0); P.next = ac.currentTime + 0.1 + pre; P.queue = [];
+  const zero = P.next + (opts.countIn || 0) * stepDur();
+  P.zero = zero; P.end = vs.length ? songEnd() : 0;
+  P.voices = vs.map(v => schedVoice(ac, liveGain(v), v, zero, ac.currentTime + 0.02)).filter(Boolean);
+  P.on = true; P.timer = setInterval(tick, 25); tick(); syncButtons();
+  return zero;
+}
+function stopVoices() { (P.voices || []).forEach(s => { try { s.stop(); } catch (e) {} }); P.voices = []; }
+function setClick(on) {
+  S.click = on;
+  try { localStorage.setItem("ekm-bb-click", on ? "on" : "off"); } catch (e) {}
+  if (!on && P.on && !P.drums) play(false);
+  syncButtons();
+}
+function setNow(step) {
+  if (step === P.now) return;
+  document.querySelectorAll(".cell.now").forEach(c => c.classList.remove("now"));
+  if (step >= 0) document.querySelectorAll('.cell[data-s="' + step + '"]').forEach(c => c.classList.add("now"));
+  P.now = step;
+}
+
+// ---------- ring ----------
+const ring = $("ring"), rc = ring.getContext("2d"), fbuf = new Uint8Array(128);
+function drawRing() {
+  const W = ring.width, c = W / 2, src = micAnalyser || (P.on || takeSrc ? analyser : null);
+  rc.clearRect(0, 0, W, W);
+  if (src) src.getByteFrequencyData(fbuf);
+  const n = 72, base = W * 0.33, hot = $("pad").classList.contains("rec");
+  const col = { hot: css("--magenta"), hi: css("--accent"), lo: css("--violet") };
+  rc.lineWidth = 5; rc.lineCap = "round";
+  for (let i = 0; i < n; i++) {
+    const v = src ? fbuf[2 + Math.floor((i < n / 2 ? i : n - i) * 1.4)] / 255 : 0;
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2, len = 6 + v * W * 0.14;
+    rc.strokeStyle = hot ? col.hot : v > 0.55 ? col.hi : col.lo;
+    rc.beginPath(); rc.moveTo(c + Math.cos(a) * base, c + Math.sin(a) * base); rc.lineTo(c + Math.cos(a) * (base + len), c + Math.sin(a) * (base + len)); rc.stroke();
+  }
+  if (P.on && ac) {
+    while (P.queue.length && P.queue[0].t <= ac.currentTime) setNow(P.queue.shift().step);
+    const s = ac.currentTime - P.zero, txt = s < 0 ? "Count-in" : fmt(s) + "  Bar " + (Math.floor(s / barDur()) + 1);
+    if ($("pos").textContent !== txt) $("pos").textContent = txt;
+    // the song is over when the last voice take ends (not while recording a new one)
+    if (P.end && !rec && s > P.end + 0.6) { play(false); say("End of the song. Press Play to hear it again."); }
+  }
+  requestAnimationFrame(drawRing);
+}
+
+// ---------- analysis per track ----------
+function newTrack(audio, mono, sr, label) {
+  const dur = mono.length / sr;
+  return { id: uid++, kind: "drums", name: label, audio, mono, sr, dur, trim: [0, dur], sens: 1, k: "auto", hits: [], rows: [], total: 16, loopStart: 0, loopScore: 0, foundLen: 32, perfBpm: null, mute: false, solo: false, vol: 0.8, gain: null, bar: 1, nudge: null };
+}
+/** Turn a take into a voice track. A take recorded to the metronome lines up by itself; a Voice Memo starts at bar 1 and can be moved. */
+function makeVoice(t) {
+  t.kind = "voice";
+  if (t.nudge === null) { t.bar = 1; t.nudge = t.grid ? t.trim[0] - t.grid.t0 : 0; }
+}
+/** Change a voice take's trim without moving the singing in the song: the bar/nudge follow the new start. */
+function setVoiceTrim(t, a, b) {
+  const at = vAt(t) + (a - t.trim[0]);
+  t.trim = [a, b];
+  t.bar = Math.max(1, Math.round(at / barDur()) + 1); t.nudge = at - (t.bar - 1) * barDur();
+}
+function reportVoice(t) {
+  say("Track " + (slotOf(t) + 1) + ": voice take, " + fmt(t.trim[1] - t.trim[0]) + ". It comes in at bar " + t.bar + ". Press Play to hear it with the beat." +
+    (t.grid ? "" : " If it's early or late, change Comes in at, or Nudge it."));
+}
+function analyzeTrack(t) {
+  const a = Math.floor(t.trim[0] * t.sr), b = Math.floor(t.trim[1] * t.sr);
+  t.hits = BB.detectHits(t.mono.subarray(a, b), t.sr, t.sens);
+  t.hits.forEach(h => { h.s += a; h.t += t.trim[0]; });
+  t._peaks = null;
+  return buildTrack(t);
+}
+function buildTrack(t) {
+  let hits = t.hits;
+  if (t.grid) { // recorded to the metronome: the beat grid is known, so snap straight to it
+    const six = 15 / t.grid.bpm;
+    hits.forEach(h => (h.step = Math.round((h.t - t.grid.t0) / six)));
+    hits = t.hits = hits.filter(h => h.step >= 0);
+  }
+  if (hits.length < 3) { t.rows = []; t.total = 16; t.loopStart = 0; t.loopScore = 0; t.perfBpm = null; return false; }
+  const n = BB.groupHits(hits, t.k === "auto" ? "auto" : +t.k), drums = BB.suggestDrums(hits, n);
+  let lp;
+  if (t.grid) { t.perfBpm = t.grid.bpm; lp = BB.loopOnBars(hits); }
+  else {
+    const tp = BB.estimateTempo(hits.map(h => h.t));
+    t.perfBpm = tp ? tp.bpm : null;
+    BB.quantize(hits, t.perfBpm || 97);
+    lp = BB.findLoop(hits);
+  }
+  t.rows = [];
+  for (let g = n - 1; g >= 0; g--) {
+    const hs = hits.filter(h => h.g === g), mx = Math.max(...hs.map(h => h.pk)), cells = {};
+    hs.forEach(h => { cells[h.step] = Math.round(72 + 55 * (h.pk / mx)); });
+    t.rows.push({ drum: drums[g], group: g, cells });
+  }
+  t.total = Math.ceil((hits[hits.length - 1].step + 1) / 16) * 16;
+  t.loopStart = lp.start; t.loopScore = lp.score; t.foundLen = lp.len;
+  return true;
+}
+function report(t, ok) {
+  const n = slotOf(t) + 1;
+  if (!ok) { say("Track " + n + ": I only heard " + t.hits.length + " sounds. Widen the trim, record a little louder, or set Listening to Harder.", true); return; }
+  say("Track " + n + ": " + t.hits.length + " hits, " + t.rows.length + " sounds." + (t.loopScore >= 0.5 ? " Found the " + t.foundLen / 16 + "-bar loop you repeat. Press Play." : " No clear repeat yet. Choose the bar where your loop starts."));
+}
+async function loadInto(slot, buf, label, grid, kind) {
+  if (slot < 0) { say("All four tracks are full. Remove one to add another.", true); return; }
+  play(false); say("Listening to " + label + "...");
+  let audio;
+  try { audio = await ctx().decodeAudioData(buf); }
+  catch (e) { say("I couldn't read that file. Try an m4a, wav or mp3.", true); return; }
+  const ch = []; for (let c = 0; c < audio.numberOfChannels; c++) ch.push(audio.getChannelData(c));
+  const m = BB.toMono(ch, audio.sampleRate), t = newTrack(audio, m.x, m.sr, label.replace(/\.[^.]+$/, "").slice(0, 40));
+  if (grid) { t.grid = grid; t.trim[0] = Math.max(0, Math.min(t.dur - 1, grid.t0 - 0.15)); } // skip the count-in
+  S.slots[slot] = t; S.active = slot;
+  if (tracks().length === 1) $("name").value = t.name;
+  if ((kind || S.nextKind) === "voice") { makeVoice(t); reportVoice(t); renderAll(); return; }
+  const ok = analyzeTrack(t);
+  if (ok && drumTracks().length === 1 && t.loopScore >= 0.5) S.loopLen = Math.min(64, t.foundLen);
+  report(t, ok);
+  // beat first, then the song: after the first drum take, the next take defaults to voice
+  if (ok && drumTracks().length === 1 && !voiceTracks().length && S.nextKind === "drums") { S.nextKind = "voice"; $("status").textContent += " Next take is set to Voice, so you can sing over it."; }
+  renderAll();
+}
+
+// ---------- rendering ----------
+function renderAll() { renderTracks(); renderEditor(); renderGrid(); syncButtons(); }
+function syncButtons() {
+  const tgt = targetSlot();
+  const recText = rec ? "Stop recording" : tgt >= 0 ? "Record track " + (tgt + 1) + (S.nextKind === "voice" ? ": voice" : ": drums") : "Tracks full";
+  document.querySelectorAll("#kindSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === S.nextKind)));
+  [$("recBtn"), $("dockRec")].forEach(b => { b.textContent = b.id === "dockRec" ? (rec ? "Stop" : tgt >= 0 ? "Record T" + (tgt + 1) : "Full") : recText; b.classList.toggle("live", !!rec); b.disabled = !rec && tgt < 0; });
+  [$("playBtn"), $("dockPlay")].forEach(b => { b.textContent = P.on ? "Stop" : "Play"; b.classList.toggle("live", P.on); b.classList.toggle("primary", !P.on); });
+  $("clickBtn").textContent = S.click ? "Metronome on" : "Metronome off"; $("clickBtn").setAttribute("aria-pressed", String(S.click));
+  $("dockClick").textContent = S.click ? "Click on" : "Click off"; $("dockClick").setAttribute("aria-pressed", String(S.click));
+  [$("clickBtn"), $("dockClick")].forEach(b => b.classList.toggle("primary", S.click));
+  $("clickOnly").textContent = P.on && !P.drums ? "Stop click" : "Click only";
+  const t = activeTrack();
+  $("useMine").hidden = !(t && t.perfBpm && !isVoice(t));
+  if (t && t.perfBpm) $("useMine").textContent = "Use my tempo (" + Math.round(t.perfBpm) + ")";
+  $("alongWrap").hidden = !tracks().length;
+}
+function renderTracks() {
+  const el = $("tracks"); el.innerHTML = "";
+  S.slots.forEach((t, i) => {
+    const d = document.createElement("div");
+    d.className = "trk" + (i === S.active ? " on" : "") + (t ? "" : " empty");
+    d.style.setProperty("--tc", "var(--t" + (i + 1) + ")");
+    if (t) {
+      const kinds = isVoice(t) ? "Voice, " + fmt(t.trim[1] - t.trim[0]) + ", from bar " + t.bar : [...new Set(t.rows.map(r => DRUMS[r.drum].name))].join(", ") || "No hits yet";
+      d.innerHTML = '<button class="trk-sel" data-sel="' + i + '" aria-pressed="' + (i === S.active) + '"><span class="trk-n">Track ' + (i + 1) + (isVoice(t) ? "  Voice" : "  Drums") + '</span><span class="trk-name"></span><span class="trk-sum"></span></button>' +
+        '<div class="trk-ctl"><button class="mini" data-mute="' + i + '" aria-pressed="' + t.mute + '" aria-label="Mute track ' + (i + 1) + '">M</button><button class="mini" data-solo="' + i + '" aria-pressed="' + t.solo + '" aria-label="Solo track ' + (i + 1) + '">S</button><input type="range" min="0" max="100" value="' + Math.round(t.vol * 100) + '" data-vol="' + i + '" aria-label="Track ' + (i + 1) + ' volume"></div>';
+      d.querySelector(".trk-name").textContent = t.name;
+      d.querySelector(".trk-sum").textContent = kinds;
+    } else {
+      d.innerHTML = '<button class="trk-sel" data-sel="' + i + '" aria-pressed="' + (i === S.active) + '"><span class="trk-n">Track ' + (i + 1) + '</span><span class="trk-name muted">Empty</span><span class="trk-sum">Record or add a file</span></button>' +
+        '<div class="trk-ctl"><button class="mini wide" data-rec="' + i + '">Record</button><button class="mini wide" data-add="' + i + '">Add file</button></div>';
+    }
+    el.appendChild(d);
+  });
+}
+function describe(hs) { const c = Math.pow(2, hs.reduce((s, h) => s + Math.log2(h.cent), 0) / hs.length); return c < 300 ? "low and round" : c < 1000 ? "mid and punchy" : "bright and sharp"; }
+function renderEditor() {
+  const t = activeTrack();
+  const v = isVoice(t);
+  $("edTitle").textContent = "Track " + (S.active + 1) + (t ? (v ? ": voice" : ": what I heard") : "");
+  $("edBody").hidden = !t; $("edEmpty").hidden = !!t; $("edTools").hidden = !t;
+  if (!t) return;
+  $("sensWrap").hidden = v; $("kseg").hidden = v; $("loopWrap").hidden = v; $("findLoop").hidden = v; $("sounds").hidden = v;
+  $("voiceTools").hidden = !v; $("kindBtn").textContent = v ? "Use as drums" : "Use as voice";
+  $("trimHint").textContent = v ? "Drag the handles to cut off talking or noise at the start and end. The singing stays where it is in the song." : "Drag the two handles to keep only the part where you found the groove.";
+  if (v) {
+    $("stats").innerHTML = "<span>Using <b>" + fmt(t.trim[0]) + " to " + fmt(t.trim[1]) + "</b> of " + fmt(t.dur) + "</span><span>Comes in at <b>bar " + t.bar + "</b></span><span>Ends at <b>" + fmt(Math.max(0, vEnd(t))) + "</b>, bar " + (Math.floor(Math.max(0, vEnd(t)) / barDur()) + 1) + "</span>";
+    const vb = $("vBar"); vb.innerHTML = "";
+    for (let b = 1; b <= Math.max(64, t.bar); b++) { const o = document.createElement("option"); o.value = b; o.textContent = "Bar " + b; vb.appendChild(o); }
+    vb.value = String(t.bar);
+    $("nudgeVal").textContent = (t.nudge > 0 ? "+" : "") + Math.round(t.nudge * 1000) + " ms";
+    requestAnimationFrame(renderWave);
+    return;
+  }
+  $("sens").value = String(t.sens);
+  document.querySelectorAll("#kseg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === String(t.k))));
+  const ok = t.rows.length > 0;
+  $("stats").innerHTML = "<span>Using <b>" + fmt(t.trim[0]) + " to " + fmt(t.trim[1]) + "</b> of " + fmt(t.dur) + "</span><span>Hits <b>" + t.hits.length + "</b></span>" +
+    (ok ? "<span>" + (t.grid ? "Metronome" : "Your tempo") + " <b>" + (t.perfBpm ? Math.round(t.perfBpm) + " BPM" : "unknown") + "</b></span><span>Loop <b>bar " + (t.loopStart / 16 + 1) + "</b>, " + trackLen(t) / 16 + " bar" + (trackLen(t) > 16 ? "s" : "") + "</span>" : "");
+  const lb = $("loopBar"); lb.innerHTML = "";
+  for (let b = 0; b < t.total / 16; b++) { const o = document.createElement("option"); o.value = b * 16; o.textContent = "Bar " + (b + 1); lb.appendChild(o); }
+  lb.value = String(t.loopStart); lb.disabled = !ok; $("findLoop").disabled = !ok;
+  const el = $("sounds"); el.innerHTML = "";
+  t.rows.filter(r => r.group !== null).slice().reverse().forEach(r => {
+    const hs = t.hits.filter(h => h.g === r.group);
+    const d = document.createElement("div"); d.className = "sound"; d.style.setProperty("--dc", "var(--c-" + r.drum + ")");
+    d.innerHTML = '<div class="t"><b>Sound ' + (r.group + 1) + '</b><span class="muted">' + hs.length + " hits, " + describe(hs) + '</span></div><div class="row"><button class="btn small" data-voice="' + r.group + '">Hear my voice</button><label class="ctl">plays as <select data-map="' + r.group + '">' +
+      Object.keys(DRUMS).map(k => '<option value="' + k + '"' + (k === r.drum ? " selected" : "") + ">" + DRUMS[k].name + "</option>").join("") + "</select></label></div>";
+    el.appendChild(d);
+  });
+  requestAnimationFrame(renderWave);
+}
+function renderWave() {
+  const cv = $("wave"); if (!cv || $("edBody").hidden) return;
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (!w) return;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const c = cv.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+  const t = activeTrack(); if (!t) return;
+  const X = s => (s / t.dur) * w;
+  const v = isVoice(t), tl = trackLen(t), win = v ? [] : t.hits.filter(q => q.step >= t.loopStart && q.step < t.loopStart + tl);
+  if (win.length) { c.fillStyle = css("--loopfill"); const a = X(win[0].t) - 3, b = Math.min(w, X(win[win.length - 1].t + 0.25)); c.fillRect(a, 0, b - a, h); }
+  const W = Math.round(w);
+  if (!t._peaks || t._peaks.length !== W) {
+    const n = t.mono.length, per = n / W, pk = new Float32Array(W); let top = 0;
+    for (let px = 0; px < W; px++) { let m = 0; const s = Math.floor(px * per), e = Math.floor(s + per); for (let i = s; i < e; i += 3) { const v = Math.abs(t.mono[i]); if (v > m) m = v; } pk[px] = m; if (m > top) top = m; }
+    for (let i = 0; i < W; i++) pk[i] /= top || 1;
+    t._peaks = pk;
+  }
+  c.fillStyle = css("--muted"); const mid = h / 2, amp = h / 2 - 18;
+  for (let px = 0; px < W; px++) { const hh = Math.max(1, t._peaks[px] * amp * 2); c.fillRect(px, mid - hh / 2, 1, hh); }
+  if (!v) t.hits.forEach(q => { const r = t.rows.find(o => o.group === q.g); c.fillStyle = r ? css("--c-" + r.drum) : css("--fg"); c.fillRect(X(q.t) - 1.5, 3, 3, 9); c.fillRect(X(q.t) - 1.5, h - 12, 3, 9); });
+  const ta = X(t.trim[0]), tb = X(t.trim[1]);
+  c.fillStyle = css("--shade"); c.fillRect(0, 0, ta, h); c.fillRect(tb, 0, w - tb, h);
+  const acc = css("--accent"), bg = css("--bg");
+  [ta, tb].forEach(x => {
+    x = Math.min(w - 8, Math.max(8, x));
+    c.fillStyle = acc; c.fillRect(x - 1.5, 0, 3, h); c.fillRect(x - 8, h / 2 - 18, 16, 36);
+    c.fillStyle = bg; c.fillRect(x - 3, h / 2 - 8, 1.5, 16); c.fillRect(x + 1.5, h / 2 - 8, 1.5, 16);
+  });
+}
+function renderGrid() {
+  const g = $("grid"); g.innerHTML = ""; const L = S.loopLen;
+  const head = document.createElement("div"); head.className = "grow";
+  let hh = '<div class="glabel"></div><div class="cellrow">';
+  for (let b = 0; b < L / 16; b++) hh += '<span class="barlab' + (b ? " b16" : "") + '">Bar ' + (b + 1) + "</span>";
+  head.innerHTML = hh + "</div>"; g.appendChild(head);
+  const list = drumTracks().length ? S.slots.map((t, i) => (t && !isVoice(t) ? [t, i] : null)).filter(Boolean) : [[EX, "ex"]];
+  list.forEach(([t, i]) => {
+    const th = document.createElement("div"); th.className = "trow-head";
+    th.style.setProperty("--tc", i === "ex" ? "var(--accent)" : "var(--t" + (i + 1) + ")");
+    th.innerHTML = '<span class="dot"></span><span></span>';
+    th.lastChild.textContent = (i === "ex" ? "Example beat" : "Track " + (i + 1) + "  " + t.name) + (t.mute ? "  (muted)" : "");
+    g.appendChild(th);
+    if (!t.rows.length) { const p = document.createElement("div"); p.className = "grid-empty"; p.textContent = "No hits yet in this track."; g.appendChild(p); return; }
+    const tl = trackLen(t), dim = !audible(t);
+    t.rows.forEach((r, ri) => {
+      const row = document.createElement("div"); row.className = "grow" + (dim ? " muted" : ""); row.style.setProperty("--dc", "var(--c-" + r.drum + ")");
+      let s = '<div class="glabel"><i></i>' + DRUMS[r.drum].name + '</div><div class="cellrow">';
+      for (let k = 0; k < L; k++) {
+        const on = !!r.cells[t.loopStart + (k % tl)];
+        s += '<button class="cell' + (k % 16 === 0 && k ? " b16" : k % 4 === 0 && k ? " b4" : "") + (k % 4 === 0 ? " beat" : "") + (on ? " on" : "") + (k >= tl ? " ghost" : "") +
+          '" data-t="' + i + '" data-r="' + ri + '" data-s="' + k + '" aria-pressed="' + on + '" aria-label="' + DRUMS[r.drum].name + ", step " + (k + 1) + '"></button>';
+      }
+      row.innerHTML = s + "</div>"; g.appendChild(row);
+    });
+  });
+  S.slots.forEach((t, i) => {
+    if (!isVoice(t)) return;
+    const th = document.createElement("div"); th.className = "trow-head"; th.style.setProperty("--tc", "var(--t" + (i + 1) + ")");
+    th.innerHTML = '<span class="dot"></span><span></span>';
+    th.lastChild.textContent = "Track " + (i + 1) + "  " + t.name + "  voice, plays from bar " + t.bar + (audible(t) ? "" : "  (muted)");
+    g.appendChild(th);
+  });
+  document.querySelectorAll("#lseg button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.l === S.loopLen)));
+  const at0 = activeTrack(), at = isVoice(at0) ? null : at0;
+  $("addLabel").textContent = at ? "Add a drum to track " + (S.active + 1) : drumTracks().length ? "Add a drum (choose a drum track)" : "Add a drum";
+  $("addDrum").disabled = !at && drumTracks().length > 0;
+  $("addDrum").innerHTML = '<option value="">Choose</option>' + Object.keys(DRUMS).map(k => '<option value="' + k + '">' + DRUMS[k].name + "</option>").join("");
+  P.now = -1;
+}
+
+// ---------- trim handles ----------
+let drag = null, dragFrom = null;
+$("wave").addEventListener("pointerdown", e => {
+  const t = activeTrack(); if (!t) return;
+  const w = e.currentTarget.clientWidth, X = s => (s / t.dur) * w, da = Math.abs(e.offsetX - X(t.trim[0])), db = Math.abs(e.offsetX - X(t.trim[1]));
+  if (Math.min(da, db) > 32) return;
+  drag = da <= db ? 0 : 1; dragFrom = t.trim.slice(); e.currentTarget.setPointerCapture(e.pointerId); e.preventDefault();
+});
+$("wave").addEventListener("pointermove", e => {
+  if (drag === null) return;
+  const t = activeTrack(), w = e.currentTarget.clientWidth, sec = Math.min(t.dur, Math.max(0, (e.offsetX / w) * t.dur));
+  if (drag === 0) t.trim[0] = Math.min(sec, t.trim[1] - 1); else t.trim[1] = Math.max(sec, t.trim[0] + 1);
+  renderWave();
+  $("stats").firstChild.innerHTML = "Using <b>" + fmt(t.trim[0]) + " to " + fmt(t.trim[1]) + "</b> of " + fmt(t.dur);
+});
+function endDrag() {
+  if (drag === null) return; drag = null; const t = activeTrack(); play(false);
+  if (isVoice(t)) { const nt = t.trim.slice(); t.trim = dragFrom; setVoiceTrim(t, nt[0], nt[1]); reportVoice(t); renderAll(); return; }
+  const ok = analyzeTrack(t); report(t, ok); renderAll();
+}
+$("wave").addEventListener("pointerup", endDrag);
+$("wave").addEventListener("pointercancel", endDrag);
+
+// ---------- playing the take ----------
+let takeSrc = null;
+function stopTake() { if (takeSrc) { try { takeSrc.stop(); } catch (e) {} takeSrc = null; } $("playRec").textContent = "Play whole take"; $("playTrim").textContent = "Play trimmed part"; }
+function playTake(offset, dur, btn) {
+  const t = activeTrack(); if (!t) return;
+  stopTake(); play(false); const s = ctx().createBufferSource(); s.buffer = t.audio; s.connect(analyser);
+  s.onended = () => { if (takeSrc === s) stopTake(); };
+  s.start(0, offset, dur); takeSrc = s; if (btn) btn.textContent = "Stop";
+}
+
+// ---------- mic ----------
+let rec = null, recStream = null, recT0 = 0, recTimer = 0;
+async function toggleRecord() {
+  if (rec) { rec.stop(); return; }
+  const slot = targetSlot(), kind = S.nextKind;
+  if (slot < 0) { say("All four tracks are full. Remove one to record another.", true); return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder) { say("Recording isn't available here. Record a Voice Memo, then use Add a recording.", true); return; }
+  ctx(); // iPhone Safari only starts audio inside the tap itself, so wake it before asking for the mic
+  try { recStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); }
+  catch (e) { say("The microphone isn't available here. Record a Voice Memo, then use Add a recording.", true); return; }
+  stopTake(); S.active = slot;
+  const a = ctx(), src = a.createMediaStreamSource(recStream); micAnalyser = a.createAnalyser(); micAnalyser.fftSize = 256; src.connect(micAnalyser);
+  const chunks = []; rec = new MediaRecorder(recStream);
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = async () => {
+    clearInterval(recTimer); recStream.getTracks().forEach(t => t.stop()); micAnalyser = null; play(false);
+    $("pad").classList.remove("rec");
+    const blob = new Blob(chunks, { type: rec.mimeType }); rec = null; syncButtons();
+    const d = new Date(), buf = await blob.arrayBuffer();
+    if (S.server) saveToServer("Beat_" + d.toISOString().slice(0, 16).replace(/[-:]/g, "").replace("T", "_") + "_voice" + (blob.type.includes("mp4") ? ".mp4" : ".webm"), buf.slice(0), true);
+    loadInto(slot, buf, (kind === "voice" ? "Vocal " : "Take ") + d.toTimeString().slice(0, 5), recGrid, kind);
+  };
+  // singing over the example beat counts too: a voice take plays the drums along
+  const along = $("along").checked && (tracks().length > 0 || kind === "voice"), countIn = S.click ? 16 : 0;
+  rec.start(); const recCtxT = a.currentTime;
+  let recGrid = null;
+  if (S.click || along) {
+    const zero = play(true, { drums: along, countIn });
+    // you hear each click a little late (speaker latency) and play to what you hear
+    recGrid = { bpm: S.bpm, t0: zero - recCtxT + (a.outputLatency || 0) + (a.baseLatency || 0) };
+  } else play(false);
+  recT0 = Date.now(); $("pad").classList.add("rec"); renderTracks(); syncButtons();
+  const countMs = countIn * stepDur() * 1000 + 100;
+  recTimer = setInterval(() => {
+    const ms = Date.now() - recT0;
+    if (ms < countMs) say("Count-in: " + Math.min(4, Math.floor(ms / (countMs / 4)) + 1) + " ... start your beat on the next 1.");
+    else say("Recording track " + (slot + 1) + (kind === "voice" ? " (voice)" : " (drums)") + "... " + Math.round((ms - (countIn ? countMs : 0)) / 1000) + " s. Press Stop when you're done.");
+  }, 100);
+}
+
+// ---------- saving ----------
+async function saveToServer(name, data, quiet) {
+  try {
+    const r = await fetch("/api/save?name=" + encodeURIComponent(name), { method: "POST", headers: { "X-EKM-BeatBox": "1" }, body: data });
+    const j = await r.json(); if (!r.ok) throw 0;
+    if (!quiet) say("Saved " + j.saved + " to 04_MIDI/Beatbox. Drag it into Logic.");
+    return true;
+  } catch (e) { if (!quiet) say("Couldn't save to the project folder.", true); return false; }
+}
+async function offerFile(name, data) {
+  const u8 = data instanceof Uint8Array ? data : new Uint8Array(data);
+  if (S.server) return saveToServer(name.replace(/(\.[a-z0-9]+)$/i, "_v01$1"), u8);
+  let dl = null;
+  if (window.claude && typeof window.claude.use === "function") dl = await window.claude.use("downloads").catch(() => null);
+  if (dl) {
+    const zipName = name.replace(/\.[a-z0-9]+$/i, ".zip");
+    try { await dl.save({ filename: zipName, data: BB.zip([{ name, data: u8 }]) }); say("Saved " + zipName + ". Tap it in the Files app to unzip " + name + "."); }
+    catch (e) { say(e && e.code === "declined" ? "Save cancelled." : e && e.code === "rate_limited" ? "A save is already waiting for you. Finish that one first." : "This view can't save files.", !(e && e.code === "declined")); }
+    return;
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([u8])); a.download = name; document.body.appendChild(a); a.click(); a.remove(); say("Downloaded " + name + ".");
+}
+const fileBase = part => ($("name").value.trim() || "My Beat").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "") + "_" + part + "_" + Math.round(S.bpm) + "bpm";
+function notesFor(t) { const out = [], tl = trackLen(t); t.rows.forEach(r => { for (let s = 0; s < S.loopLen; s++) { const v = r.cells[t.loopStart + (s % tl)]; if (v) out.push({ step: s, pitch: DRUMS[r.drum].midi, vel: v, drum: r.drum }); } }); return out; }
+function exportList() { return playTracks().filter(audible).map(t => ({ t, name: t.example ? "Example beat" : "Track " + (slotOf(t) + 1) + " " + t.name, notes: notesFor(t) })).filter(x => x.notes.length); }
+async function saveMidi() {
+  const ex = exportList(); if (!ex.length) { say("The loop is empty. Add some hits first.", true); return; }
+  await offerFile(fileBase("Drums") + ".mid", BB.midiTracks(ex.map(x => ({ name: x.name, notes: x.notes })), S.bpm, $("name").value));
+}
+/** 24-bit / 48 kHz mono WAV, peak kept at or below -1 dB (never clips). */
+function wav24(x, sr) {
+  let pk = 0; for (let i = 0; i < x.length; i++) { const a = Math.abs(x[i]); if (a > pk) pk = a; }
+  const k = pk > 0.89 ? 0.89 / pk : 1, n = x.length, dv = new DataView(new ArrayBuffer(44 + n * 3));
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, "RIFF"); dv.setUint32(4, 36 + n * 3, true); w(8, "WAVEfmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * 3, true); dv.setUint16(32, 3, true); dv.setUint16(34, 24, true); w(36, "data"); dv.setUint32(40, n * 3, true);
+  for (let i = 0, o = 44; i < n; i++, o += 3) { const v = Math.round(Math.max(-1, Math.min(1, x[i] * k)) * 8388607); dv.setUint8(o, v & 255); dv.setUint8(o + 1, (v >> 8) & 255); dv.setUint8(o + 2, (v >> 16) & 255); }
+  return new Uint8Array(dv.buffer);
+}
+// how long the song is: to the end of the last voice take, or 4 loops of drums when there is no voice yet
+const songBars = () => { const e = songEnd(); return e > 0 ? Math.max(1, Math.ceil(e / barDur())) : 4 * S.loopLen / 16; };
+/** Render part of the song offline, starting exactly at bar 1. drums: export list; voices: tracks; raw: voices at unity with no bus (for stems). */
+async function renderSong(drums, voices, raw) {
+  const sr = 48000, sd = stepDur(), bars = songBars(), dur = bars * barDur() + 1.5, off = new OfflineAudioContext(1, Math.ceil(dur * sr), sr);
+  const dbus = chain(off, off.destination), vbus = raw ? off.destination : chain(off, off.destination);
+  dbus._lp.frequency.value = KITS[S.kit].lp || 20000;
+  const steps = bars * 16;
+  drums.forEach(x => { const g = off.createGain(); g.gain.value = x.t.vol; g.connect(dbus);
+    for (let r = 0; r * S.loopLen < steps; r++) x.notes.forEach(n => { const st = r * S.loopLen + n.step; if (st < steps) playDrum(off, g, n.drum, st * sd + (n.step % 2 ? (S.swing / 100) * sd * 0.5 : 0), n.vel / 127, S.kit); }); });
+  voices.forEach(t => { const g = off.createGain(); g.gain.value = raw ? 1 : t.vol; g.connect(vbus); schedVoice(off, g, t, 0, 0); });
+  return (await off.startRendering()).getChannelData(0);
+}
+/** Several files: straight into the Beatbox folder on the Mac, or one .zip on the phone. */
+async function offerFiles(files, zipName) {
+  if (S.server) {
+    let ok = 0; for (const f of files) if (await saveToServer(f.name.replace(/(\.[a-z0-9]+)$/i, "_v01$1"), f.data, true)) ok++;
+    say(ok === files.length ? "Saved " + ok + " files to 04_MIDI/Beatbox. Drag them into Logic at bar 1." : "Saved " + ok + " of " + files.length + " files. Check that the Beat Box window is still running.", ok !== files.length);
+    return;
+  }
+  const zip = BB.zip(files.map(f => ({ name: f.name, data: f.data instanceof Uint8Array ? f.data : new Uint8Array(f.data) })));
+  let dl = null;
+  if (window.claude && typeof window.claude.use === "function") dl = await window.claude.use("downloads").catch(() => null);
+  if (dl) {
+    try { await dl.save({ filename: zipName, data: zip }); say("Saved " + zipName + " (" + files.length + " files). Tap it in the Files app to unzip, then AirDrop the folder to your Mac."); }
+    catch (e) { say(e && e.code === "declined" ? "Save cancelled." : e && e.code === "rate_limited" ? "A save is already waiting for you. Finish that one first." : "This view can't save files.", !(e && e.code === "declined")); }
+    return;
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([zip])); a.download = zipName; document.body.appendChild(a); a.click(); a.remove(); say("Downloaded " + zipName + ".");
+}
+async function saveWav() {
+  const ex = exportList(), vs = voiceTracks().filter(audible);
+  if (!ex.length && !vs.length) { say("There's nothing to play yet. Add some hits or a voice take first.", true); return; }
+  play(false); say("Rendering the mix...");
+  await offerFile(fileBase(vs.length ? "Mix" : "DrumLoop") + ".wav", wav24(await renderSong(ex, vs, false), 48000));
+}
+async function saveStems() {
+  const ex = exportList(), vs = voiceTracks().filter(audible);
+  if (!ex.length && !vs.length) { say("There's nothing to save yet. Add some hits or a voice take first.", true); return; }
+  play(false); say("Rendering every track... this can take a few seconds.");
+  const files = [];
+  if (ex.length) {
+    files.push({ name: fileBase("Drums_Loop") + ".mid", data: BB.midiTracks(ex.map(x => ({ name: x.name, notes: x.notes })), S.bpm, $("name").value) });
+    files.push({ name: fileBase("Drums") + ".wav", data: wav24(await renderSong(ex, [], false), 48000) });
+  }
+  for (const t of vs) files.push({ name: fileBase("Voice_T" + (slotOf(t) + 1) + "_" + t.name.replace(/[^A-Za-z0-9]+/g, "_").slice(0, 24)) + ".wav", data: wav24(await renderSong([], [t], true), 48000) });
+  files.push({ name: fileBase("Mix") + ".wav", data: wav24(await renderSong(ex, vs, false), 48000) });
+  const readme = "EKM Beat Box export: " + ($("name").value || "My Beat") + "\r\nTempo: " + Math.round(S.bpm) + " BPM, 4/4. Length: " + songBars() + " bars.\r\n\r\n" +
+    "In Logic Pro:\r\n1. Set the project tempo to " + Math.round(S.bpm) + " (click the tempo in the control bar and type it).\r\n" +
+    "2. Drag each WAV file onto its own audio track, at bar 1. Everything lines up from there.\r\n" +
+    "3. Optional: drag the Drums_Loop MIDI file onto a Drum Kit track at bar 1 and loop the region, to swap in real drum sounds.\r\n" +
+    "Files are 48 kHz, 24-bit. The Mix file is a reference of everything together.\r\n";
+  files.push({ name: "Read_Me_" + Math.round(S.bpm) + "bpm.txt", data: new TextEncoder().encode(readme) });
+  await offerFiles(files, fileBase("Song") + ".zip");
+}
+
+// ---------- events ----------
+$("recBtn").onclick = toggleRecord; $("dockRec").onclick = toggleRecord;
+$("playBtn").onclick = () => play(!P.on); $("dockPlay").onclick = () => play(!P.on);
+$("clickBtn").onclick = () => setClick(!S.click); $("dockClick").onclick = () => setClick(!S.click);
+$("clickOnly").onclick = () => { if (P.on && !P.drums) { play(false); return; } if (!S.click) setClick(true); play(true, { drums: false }); };
+$("fileBtn").onclick = () => { $("file").dataset.slot = targetSlot(); $("file").click(); };
+$("file").onchange = async e => { const f = e.target.files[0]; if (f) loadInto(+e.target.dataset.slot, await f.arrayBuffer(), f.name, null, S.nextKind); e.target.value = ""; };
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", async e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) loadInto(targetSlot(), await f.arrayBuffer(), f.name, null, S.nextKind); });
+$("kindSeg").onclick = e => { const b = e.target.closest("button"); if (!b || rec) return; S.nextKind = b.dataset.kind; syncButtons(); };
+$("kindBtn").onclick = () => {
+  const t = activeTrack(); if (!t) return; play(false);
+  if (isVoice(t)) { t.kind = "drums"; report(t, analyzeTrack(t)); } else { makeVoice(t); reportVoice(t); }
+  renderAll();
+};
+$("vBar").onchange = e => { const t = activeTrack(); if (!isVoice(t)) return; play(false); t.bar = +e.target.value; reportVoice(t); renderAll(); };
+$("nudgeSeg").onclick = e => { const b = e.target.closest("button"); const t = activeTrack(); if (!b || !isVoice(t)) return; const was = P.on; play(false); t.nudge = Math.round((t.nudge + +b.dataset.n) * 1000) / 1000; renderEditor(); renderTracks(); if (was) play(true); };
+document.addEventListener("keydown", e => { if (e.code === "Space" && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName)) { e.preventDefault(); play(!P.on); } });
+$("tracks").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.sel !== undefined) { S.active = +b.dataset.sel; renderAll(); }
+  else if (b.dataset.mute !== undefined) { const t = S.slots[+b.dataset.mute]; t.mute = !t.mute; refreshGains(); renderTracks(); renderGrid(); }
+  else if (b.dataset.solo !== undefined) { const t = S.slots[+b.dataset.solo]; t.solo = !t.solo; refreshGains(); renderTracks(); renderGrid(); }
+  else if (b.dataset.rec !== undefined) { S.active = +b.dataset.rec; renderAll(); toggleRecord(); }
+  else if (b.dataset.add !== undefined) { S.active = +b.dataset.add; renderAll(); $("file").dataset.slot = S.active; $("file").click(); }
+});
+$("tracks").addEventListener("input", e => { const i = e.target.dataset.vol; if (i === undefined) return; const t = S.slots[+i]; t.vol = +e.target.value / 100; refreshGains(); });
+$("playTrim").onclick = e => { if (takeSrc) { stopTake(); return; } const t = activeTrack(); playTake(t.trim[0], t.trim[1] - t.trim[0], e.currentTarget); };
+$("playRec").onclick = e => { if (takeSrc) { stopTake(); return; } playTake(0, undefined, e.currentTarget); };
+$("resetTrim").onclick = () => { const t = activeTrack(); play(false); if (isVoice(t)) { setVoiceTrim(t, 0, t.dur); reportVoice(t); renderAll(); return; } t.trim = [0, t.dur]; report(t, analyzeTrack(t)); renderAll(); };
+$("sens").onchange = e => { const t = activeTrack(); t.sens = +e.target.value; play(false); report(t, analyzeTrack(t)); renderAll(); };
+$("kseg").onclick = e => { const b = e.target.closest("button"); const t = activeTrack(); if (!b || !t) return; t.k = b.dataset.k; play(false); report(t, buildTrack(t)); renderAll(); };
+$("loopBar").onchange = e => { const t = activeTrack(); t.loopStart = +e.target.value; renderEditor(); renderGrid(); };
+$("findLoop").onclick = () => { const t = activeTrack(); play(false); report(t, buildTrack(t)); renderAll(); };
+$("removeTrack").onclick = e => {
+  const b = e.currentTarget;
+  if (b.dataset.armed) { S.slots[S.active] = null; delete b.dataset.armed; b.textContent = "Remove track"; play(false); say("Track " + (S.active + 1) + " removed."); renderAll(); return; }
+  b.dataset.armed = "1"; b.textContent = "Tap again to remove"; setTimeout(() => { delete b.dataset.armed; b.textContent = "Remove track"; }, 3000);
+};
+$("sounds").onclick = e => { const b = e.target.closest("[data-voice]"); if (!b) return; const t = activeTrack(); const hs = t.hits.filter(h => h.g === +b.dataset.voice).sort((p, q) => p.pk - q.pk), h = hs[Math.floor(hs.length * 0.6)]; playTake(Math.max(0, h.t - 0.03), 0.4); };
+$("sounds").onchange = e => { const m = e.target.closest("[data-map]"); if (!m) return; const t = activeTrack(); t.rows.find(q => q.group === +m.dataset.map).drum = m.value; renderAll(); };
+$("bpm").onchange = e => { S.bpm = Math.min(180, Math.max(50, +e.target.value || 97)); e.target.value = S.bpm; };
+$("useMine").onclick = () => { S.bpm = Math.round(activeTrack().perfBpm); $("bpm").value = S.bpm; };
+$("kit").onchange = e => { S.kit = e.target.value; if (master) master._lp.frequency.value = KITS[S.kit].lp || 20000; };
+$("swing").oninput = e => { S.swing = +e.target.value; };
+$("lseg").onclick = e => { const b = e.target.closest("button"); if (!b) return; S.loopLen = +b.dataset.l; if (P.on) P.step %= S.loopLen; renderEditor(); renderGrid(); };
+$("addDrum").onchange = e => { const d = e.target.value; if (!d) return; const a = activeTrack(), t = a && !isVoice(a) ? a : (drumTracks().length ? null : EX); if (t) { t.rows.unshift({ drum: d, group: null, cells: {} }); renderGrid(); renderTracks(); } };
+$("grid").onclick = e => {
+  const cell = e.target.closest(".cell"); if (!cell) return;
+  const t = cell.dataset.t === "ex" ? EX : S.slots[+cell.dataset.t], r = t.rows[+cell.dataset.r], src = srcStep(t, +cell.dataset.s);
+  if (r.cells[src]) delete r.cells[src]; else { r.cells[src] = 104; playDrum(ctx(), master, r.drum, ac.currentTime + 0.01, 0.8, S.kit); }
+  const sl = $("gridwrap").scrollLeft; renderGrid(); $("gridwrap").scrollLeft = sl;
+};
+$("saveMidi").onclick = saveMidi; $("saveWav").onclick = saveWav; $("saveStems").onclick = saveStems;
+window.addEventListener("resize", () => renderWave());
+
+// ---------- boot ----------
+async function loadInbox() {
+  try {
+    const r = await fetch("/api/inbox"); if (!r.ok) throw 0;
+    const j = await r.json(); S.server = true;
+    $("saveHint").textContent = "Saves go straight into EKM_Music_Producer/04_MIDI/Beatbox. The MIDI file has one drum track per Beat Box track; drag it into Logic and pick any Drum Kit.";
+    const el = $("inbox"); el.innerHTML = "";
+    if (j.items.length) {
+      el.hidden = false; el.innerHTML = '<span class="muted">In your Beatbox folder:</span>';
+      j.items.slice(0, 6).forEach(it => { const b = document.createElement("button"); b.className = "chip"; b.textContent = it.name; b.onclick = async () => { say("Opening " + it.name + "..."); loadInto(targetSlot(), await (await fetch("/api/file?name=" + encodeURIComponent(it.name))).arrayBuffer(), it.name); }; el.appendChild(b); });
+    }
+  } catch (e) {
+    S.server = false;
+    $("saveHint").textContent = window.claude
+      ? "Saving gives you a .zip with the file inside. On iPhone, tap it in the Files app to unzip, then AirDrop the MIDI to your Mac for Logic."
+      : "On iPhone, saved files go to Downloads in the Files app (Save everything makes one .zip: tap it to unzip). AirDrop them to your Mac for Logic.";
+  }
+}
+applyTheme(theme);
+renderAll(); loadInbox(); requestAnimationFrame(drawRing);
+say("Nothing recorded yet. The example beat lets you try Play and the grid.");
+</script>
+</body>
+</html>
